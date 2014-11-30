@@ -1,0 +1,212 @@
+<?php
+// $Id: ds.install,v 1.1.2.1.2.16 2011/01/24 16:34:41 swentel Exp $
+
+/**
+ * @file
+ * Display suite install file.
+ */
+
+/**
+ * Implements hook_enable().
+ */
+function ds_enable() {
+  $format_exists = (bool) db_query_range('SELECT 1 FROM {filter_format} WHERE name = :name', 0, 1, array(':name' => 'Display Suite code'))->fetchField();
+  // Add a Display Suite code text format, if it does not exist. Do this only for the
+  // first install (or if the format has been manually deleted) as there is no
+  // reliable method to identify the format in an uninstall hook or in
+  // subsequent clean installs.
+  if (!$format_exists) {
+    $ds_format = array(
+      'format' => 'ds_code',
+      'name' => 'Display Suite code',
+      // 'Plain text' format is installed with a weight of 10 by default. Use a
+      // higher weight here to ensure that this format will not be the default
+      // format for anyone.
+      'weight' => 12,
+      'filters' => array(
+        // Enable the PHP evaluator filter.
+        'ds_code' => array(
+          'weight' => 0,
+          'status' => 1,
+        ),
+      ),
+    );
+    $ds_format = (object) $ds_format;
+    filter_format_save($ds_format);
+
+    drupal_set_message(t('A <a href="@ds-code">Display Suite code</a> text format has been created.', array('@ds-code' => url('admin/config/content/formats/' . $ds_format->format))));
+  }
+}
+
+/**
+ * Implements hook_disable().
+ */
+function ds_disable() {
+  drupal_set_message(t('The Display Suite module has been disabled. Any existing content that was using the Display Suite filter will now be visible in plain text. This might pose a security risk by exposing sensitive information, if any, used in the PHP code.'));
+}
+
+/**
+ * Implements hook_schema().
+ */
+function ds_schema() {
+  $schema['ds_settings'] = array(
+    'description' => 'The table that holds settings for the display of every entity.',
+    'fields' => array(
+      'field' => array(
+        'description' => 'The machine name of the field.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'entity_type' => array(
+        'description' => 'The name of the entity.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'bundle' => array(
+        'description' => 'The name of the entity.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'view_mode' => array(
+        'description' => 'The name of the view_mode.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      // TODO split up more (like label, format, class etc etc)
+      'settings' => array(
+        'description' => 'The settings for this field.',
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+      ),
+    ),
+    'indexes' => array(
+      'ds_field'        => array('field'),
+      'ds_entity'       => array('entity_type'),
+      'ds_bundle'       => array('bundle'),
+      'ds_view_mode'    => array('view_mode'),
+    ),
+  );
+
+  $schema['ds_layouts'] = array(
+    'description' => 'The table that holds the layouts for the display of every entity.',
+    'fields' => array(
+      'entity_type' => array(
+        'description' => 'The name of the entity.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'bundle' => array(
+        'description' => 'The name of the entity.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'view_mode' => array(
+        'description' => 'The name of the view_mode.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'layout' => array(
+        'description' => 'The name of the layout.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'settings' => array(
+        'description' => 'The settings for this layout.',
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+      ),
+    ),
+    'indexes' => array(
+      'ds_entity'       => array('entity_type'),
+      'ds_bundle'       => array('bundle'),
+      'ds_view_mode'    => array('view_mode'),
+    ),
+  );
+
+  $schema['ds_view_modes'] = array(
+    'description' => 'The table that holds custom view modes managed by Display Suite.',
+    'fields' => array(
+      'view_mode' => array(
+        'description' => 'The machine name of the view mode.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'label' => array(
+        'description' => 'The label of the view mode.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'entities' => array(
+        'description' => 'The entities for this view mode.',
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+      ),
+    ),
+    'primary key' => array('view_mode'),
+  );
+
+  $schema['ds_fields'] = array(
+    'description' => 'The table that holds custom fields managed by Display Suite.',
+    'fields' => array(
+      'field' => array(
+        'description' => 'The machine name of the field.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'label' => array(
+        'description' => 'The label of the field.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'type' => array(
+        'description' => 'The type of of the field',
+        'type' => 'int',
+        'size' => 'small',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'entities' => array(
+        'description' => 'The entities for this field.',
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+      ),
+      'properties' => array(
+        'description' => 'The properties for this field.',
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+      ),
+    ),
+    'primary key' => array('field'),
+  );
+
+  return $schema;
+}

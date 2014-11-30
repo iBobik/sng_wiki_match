@@ -1,0 +1,99 @@
+<?php
+// $Id: ds_switch_vm.module,v 1.1.2.3 2011/02/01 09:21:17 swentel Exp $
+
+/**
+ * @file
+ * Display Suite switch view modes.
+ */
+
+/**
+ * Implements hook_permission().
+ */
+function ds_switch_vm_permission() {
+
+  $permissions = array();
+  foreach (node_type_get_names() as $key => $name) {
+    $permissions['ds_switch_vm ' . $key] = array(
+      'title' => t('Switch view modes on :type', array(':type' => $name))
+    );
+  }
+
+  return $permissions;
+}
+
+/**
+ * Implements hook_menu_alter().
+ */
+function ds_switch_vm_menu_alter(&$items) {
+  // Use a custom callback for node/% to set the overriden view mode.
+  $items['node/%node']['page callback'] = 'ds_switch_vm_node_show';
+}
+
+/**
+ * View an individual nodes.
+ */
+function ds_switch_vm_node_show($node, $message = NULL) {
+  if ($message) {
+    drupal_set_title(t('Revision of %title from %date', array('%title' => $node->title, '%date' => format_date($node->revision_timestamp))), PASS_THROUGH);
+  }
+
+  // If there is a menu link to this node, the link becomes the last part
+  // of the active trail, and the link name becomes the page title.
+  // Thus, we must explicitly set the page title to be the node title.
+  drupal_set_title($node->title);
+  $uri = entity_uri('node', $node);
+  // Set the node path as the canonical URL to prevent duplicate content.
+  drupal_add_html_head_link(array('rel' => 'canonical', 'href' => url($uri['path'], $uri['options'])), TRUE);
+  // Set the non-aliased path as a default shortlink.
+  drupal_add_html_head_link(array('rel' => 'shortlink', 'href' => url($uri['path'], array_merge($uri['options'], array('alias' => TRUE)))), TRUE);
+
+  // Update the history table, stating that this user viewed this node.
+  node_tag_new($node);
+
+  // For markup consistency with other pages, use node_view_multiple() rather than node_view().
+  $view_mode = (!empty($node->ds_switch_vm)) ? $node->ds_switch_vm : 'full';
+  return node_view_multiple(array($node->nid => $node), $view_mode);
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function ds_switch_vm_form_node_form_alter(&$form, $form_state, $form_id) {
+
+  if (user_access('ds_switch_vm ' . $form['#node']->type) ) {
+
+    $view_mode_settings = field_view_mode_settings('node', $form['#node']->type);
+
+    // Get the view modes.
+    $options = array('' => t('Default'));
+    $ds_vm = ds_entity_view_modes('node');
+    foreach ($ds_vm as $key => $item) {
+      $overriden = (!empty($view_mode_settings[$key]['custom_settings']) ? TRUE : FALSE);
+      if ($overriden) {
+        $options[$key] = $item['label'];
+      }
+    }
+
+    // Only fire if we have more than 1 option.
+    if (count($options) > 1) {
+      $node = $form['#node'];
+      $form['ds_switch'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Display settings'),
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+        '#group' => 'additional_settings',
+        '#weight' => 100,
+      );
+
+      $form['ds_switch']['ds_switch_vm'] = array(
+        '#type' => 'select',
+        '#title' => t('View mode'),
+        '#options' => $options,
+        '#default_value' => isset($node->ds_switch_vm) ? $node->ds_switch_vm : '',
+        '#description' => t('Switch to a different view mode to display the default full page view of this node.'),
+        '#weight' => -1,
+      );
+    }
+  }
+}

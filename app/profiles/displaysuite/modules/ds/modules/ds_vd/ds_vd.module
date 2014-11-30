@@ -1,0 +1,147 @@
+<?php
+// $Id: ds_vd.module,v 1.1.2.4 2011/02/03 17:08:44 swentel Exp $
+
+/**
+ * @file
+ * Display Suite Views.
+ */
+
+/**
+ * Implements hook_ds_fields().
+ */
+function ds_vd_ds_fields($entity_type, $bundle, $view_mode) {
+
+  $fields = array(
+    'admin_links' => array(
+      'title' => t('Admin links'),
+      'type' => DS_FIELD_TYPE_PREPROCESS,
+      'status' => DS_FIELD_STATUS_STATIC,
+
+    ),
+    'title' => array(
+      'title' => t('Views title'),
+      'type' => DS_FIELD_TYPE_FUNCTION,
+      'status' => DS_FIELD_STATUS_STATIC,
+      'properties' => array(
+        'formatters' => array(
+          'vd_title_h1' => t('H1 title'),
+          'vd_title_h2' => t('H2 title'),
+          'vd_title_h2_block' => t('H2 block title'),
+          'vd_title_p' => t('Paragraph title'),
+        ),
+      )
+    ),
+    'header' => array(
+      'title' => t('Views header'),
+      'type' => DS_FIELD_TYPE_PREPROCESS,
+      'status' => DS_FIELD_STATUS_STATIC,
+    ),
+    'exposed' => array(
+      'title' => t('Exposed filters'),
+      'type' => DS_FIELD_TYPE_PREPROCESS,
+      'status' => DS_FIELD_STATUS_STATIC,
+    ),
+    'attachment_before' => array(
+      'title' => t('Attachment before'),
+      'type' => DS_FIELD_TYPE_PREPROCESS,
+      'status' => DS_FIELD_STATUS_STATIC,
+    ),
+    'rows' => array(
+      'title' => t('Views content'),
+      'type' => DS_FIELD_TYPE_PREPROCESS,
+      'status' => DS_FIELD_STATUS_STATIC,
+    ),
+    'empty' => array(
+      'title' => t('Empty text'),
+      'type' => DS_FIELD_TYPE_PREPROCESS,
+      'status' => DS_FIELD_STATUS_STATIC,
+    ),
+    'pager' => array(
+      'title' => t('Pager'),
+      'type' => DS_FIELD_TYPE_PREPROCESS,
+      'status' => DS_FIELD_STATUS_STATIC,
+    ),
+    'attachment_after' => array(
+      'title' => t('Attachment after'),
+      'type' => DS_FIELD_TYPE_PREPROCESS,
+      'status' => DS_FIELD_STATUS_STATIC,
+    ),
+    'more' => array(
+      'title' => t('More'),
+      'type' => DS_FIELD_TYPE_PREPROCESS,
+      'status' => DS_FIELD_STATUS_STATIC,
+    ),
+    'footer' => array(
+      'title' => t('Views footer'),
+      'type' => DS_FIELD_TYPE_PREPROCESS,
+      'status' => DS_FIELD_STATUS_STATIC,
+    ),
+    'feed_icon' => array(
+      'title' => t('Feed icon'),
+      'type' => DS_FIELD_TYPE_PREPROCESS,
+      'status' => DS_FIELD_STATUS_STATIC,
+    ),
+  );
+
+  return array('views' => $fields);
+}
+
+/**
+ * Implements hook_preprocess_views_view().
+ */
+function ds_vd_preprocess_views_view(&$vars) {
+
+  // @todo this doesn't work at all for now.
+  // We can probably just run ds_preprocess_entity() and some way
+  // of ds_field_attach_view_alter()
+  // but with some changes to the function I guess.
+  //dsm($vars);
+  return;
+
+  $view_object = new stdClass();
+  $view_object->type = $vars['view']->name .'_'. $vars['view']->current_display;
+  if (variable_get('vd_type_'. $view_object->type, FALSE)) {
+    return;
+  }
+
+  // Good to go.
+  $view = $vars['view'];
+  $vars['view']->build_mode = 'full';
+  $vars['view']->type = $view_object->type;
+  $view_object->build_mode = 'full';
+  $view_object->view = $view;
+
+  ds_build_fields_and_regions($view_object, 'vd');
+
+  if (!$view_object->render_by_ds) {
+    return;
+  }
+
+  if (!empty($view_object->ds_fields)) {
+    foreach ($view_object->ds_fields as $key => $field) {
+      if (!isset($view_object->preprocess_fields[$key])) {
+        $field_key = $key .'_rendered';
+        $vars[$field_key] = $view_object->{$field_key};
+      }
+    }
+  }
+
+  $vars['template_files'][] = 'vd';
+  $vars['regions'] = $view_object->regions;
+  $vars['views_content'] = ds_render_content($view_object, 'vd', $vars);
+}
+
+
+/**
+ * Function used for theming the views title, user name etc. Note that
+ * this is a function so it can't be overridden by a phptemplate function.
+ *
+ * @param $field
+ *   The field array.
+ */
+function ds_vd_render_title_field($field) {
+  $output = '';
+  $formatter = explode('_', $field['formatter']);
+  $tag = $formatter[2];
+  return '<' . $tag . '>'. check_plain($field['entity']->view->display_handler->get_option('title')) .'</' . $tag . '>';
+}

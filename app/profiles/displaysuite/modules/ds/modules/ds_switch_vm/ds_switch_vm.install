@@ -1,0 +1,51 @@
+<?php
+// $Id: ds_switch_vm.install,v 1.1.2.2 2011/01/27 10:08:49 swentel Exp $
+
+/**
+ * @file
+ * Install file.
+ */
+
+/**
+ * Implementation of hook_install().
+ */
+function ds_switch_vm_install() {
+  $ret = array();
+
+  /*
+   * hook_schema_alter does not add fields to the database.
+   * @see http://drupal.org/node/185596
+   */
+  $schema['node_revision'] = array();
+  ds_switch_vm_schema_alter($schema);
+  foreach ($schema['node_revision']['fields'] as $name => $spec) {
+    db_add_field('node_revision', $name, $spec);
+  }
+
+  // Ensure that we get called as early as possible among the hooking modules.
+  db_query("UPDATE {system} SET weight = -99 WHERE name = 'ds_switch_vm'");
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function ds_switch_vm_uninstall() {
+  // Drop field in node revision table.
+  db_drop_field('node_revision', 'ds_switch_vm');
+}
+
+/**
+ * Implementation of hook_schema_alter().
+ */
+function ds_switch_vm_schema_alter(&$schema) {
+
+  // Add a field ds_switch_vm to the node_revision table in order to store the override.
+  if (isset($schema['node_revision'])) {
+    $schema['node_revision']['fields']['ds_switch_vm'] = array(
+      'type' => 'varchar',
+      'length' => 255,
+      'not null' => TRUE,
+      'default' => '',
+    );
+  }
+}

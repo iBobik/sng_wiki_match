@@ -1,0 +1,13 @@
+; $Id: ds_switch_vm.info,v 1.1.2.2 2011/02/01 09:21:17 swentel Exp $
+name = "Switch view mode"
+description = "Switch view modes on a per entity basis."
+core = "7.x"
+package = "Display suite"
+dependencies[] = ds
+
+; Information added by drupal.org packaging script on January 1, 1970 - 00:00
+version = "7.x-1.0-alpha1"
+core = "7.x"
+project = "ds"
+datestamp = "1296840434"
+

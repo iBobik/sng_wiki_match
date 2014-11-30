@@ -1,0 +1,21 @@
+/* $Id: ds_4col.css,v 1.1.2.1 2011/01/12 09:28:29 jyve Exp $ */
+
+.group-first {
+  width: 25%;
+  float: left;
+}
+
+.group-second {
+  width: 25%;
+  float: left;
+}
+
+.group-third {
+  width: 25%;
+  float: left;
+}
+
+.group-fourth {
+  width: 25%;
+  float: left;
+}

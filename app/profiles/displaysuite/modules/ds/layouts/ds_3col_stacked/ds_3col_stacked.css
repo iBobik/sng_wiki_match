@@ -1,0 +1,24 @@
+/* $Id: ds_3col_stacked.css,v 1.1.2.2 2011/01/12 09:23:56 jyve Exp $ */
+
+.group-header {
+  clear: both;
+}
+
+.group-left {
+  width: 25%;
+  float: left;
+}
+
+.group-middle {
+  width: 50%;
+  float: left;
+}
+
+.group-right {
+  width: 25%;
+  float: right;
+}
+
+.group-footer {
+  clear: both;
+}

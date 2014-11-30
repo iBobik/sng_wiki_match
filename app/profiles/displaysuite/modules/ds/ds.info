@@ -1,0 +1,12 @@
+; $Id: ds.info,v 1.1.4.10 2011/01/13 19:59:22 swentel Exp $
+name = "Display suite"
+description = "Extend the display options for every entity type."
+core = "7.x"
+package = "Display suite"
+files[] = views/views_plugin_ds_entity_view.inc
+; Information added by drupal.org packaging script on January 1, 1970 - 00:00
+version = "7.x-1.0-alpha1"
+core = "7.x"
+project = "ds"
+datestamp = "1296840434"
+

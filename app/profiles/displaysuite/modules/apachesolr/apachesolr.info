@@ -1,0 +1,22 @@
+; $Id: apachesolr.info,v 1.15 2010/12/05 03:51:56 pwolanin Exp $
+name = Apache Solr framework
+description = Framework for searching with Solr
+dependencies[] = search
+package = Apache Solr
+core = 7.x
+
+files[] = apachesolr.install
+files[] = apachesolr.module
+files[] = apachesolr.admin.inc
+files[] = apachesolr.index.inc
+files[] = Drupal_Apache_Solr_Service.php
+files[] = Solr_Base_Query.php
+files[] = SolrPhpClient/Apache/Solr/Service.php
+files[] = tests/solr_index_and_search.test
+
+; Information added by drupal.org packaging script on 2011-01-07
+version = "7.x-1.0-beta3"
+core = "7.x"
+project = "apachesolr"
+datestamp = "1294367749"
+

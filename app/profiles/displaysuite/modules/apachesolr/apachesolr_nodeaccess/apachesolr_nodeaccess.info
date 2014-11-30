@@ -1,0 +1,15 @@
+; $Id: apachesolr_nodeaccess.info,v 1.2 2010/11/24 02:49:27 pwolanin Exp $
+name = Apache Solr node access
+description = Integrates the node access system with Apache Solr search
+dependencies[] = apachesolr
+package = Apache Solr
+core = 7.x
+
+files[] = apachesolr_nodeaccess.module
+
+; Information added by drupal.org packaging script on 2011-01-07
+version = "7.x-1.0-beta3"
+core = "7.x"
+project = "apachesolr"
+datestamp = "1294367749"
+

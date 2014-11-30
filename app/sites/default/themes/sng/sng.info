@@ -1,0 +1,6 @@
+name = SNG
+package = Core
+version = 0.1
+core = 7.x
+stylesheets[all][] = layout.css
+

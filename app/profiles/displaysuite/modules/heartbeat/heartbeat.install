@@ -1,0 +1,315 @@
+<?php
+// $Id: heartbeat.install,v 1.1.2.6.2.10.2.26.2.2 2010/08/14 13:17:57 stalski Exp $
+
+/**
+ * @file
+ *   Installation file for the heartbeat module.
+ * @author
+ *   Jochen Stals - Menhir - www.menhir.be
+ */
+
+/**
+ * Implementation of hook_install().
+ */
+function heartbeat_install() {
+   /*
+   * 
+   */
+  // Module weights in core: put heartbeat after most modules in the chain.
+  // especially core modules, rules, token and pathauto
+  db_update('system')
+    ->fields(array('weight' => 50))
+    ->condition('name', 'forum')
+    ->execute();
+
+  // Global overridables
+  variable_set('heartbeat_activity_grouping_seconds', 7200);
+  variable_set('heartbeat_activity_grouping_how_many', 5);
+  variable_set('heartbeat_allowed_tags', implode(',', array('h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'span', 'em', 'strong', 'ul', 'li', 'p', 'div', 'img', 'object', 'param', 'embed', 'blockquote')));
+  variable_set('heartbeat_activity_log_cron_delete', 2678400);
+  variable_set('heartbeat_stream_data', array());
+
+  // Import streams
+  drupal_load('module', 'heartbeat');
+  heartbeat_import_streams();
+  
+  // Import heartbeat messages
+  heartbeat_import_message_templates();
+  
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function heartbeat_uninstall() {
+
+  variable_del('heartbeat_activity_grouping_seconds');
+  variable_del('heartbeat_activity_grouping_how_many');
+  variable_del('heartbeat_activity_log_cron_delete');
+  variable_del('heartbeat_allowed_tags');
+  variable_del('heartbeat_stream_data');
+  
+  variable_del('heartbeat_streams');
+
+  // Remove all tables so no need to delete the messages
+  drupal_uninstall_schema('heartbeat');
+
+  // This should clear the rules with a linkage to the heartbeat action
+  if (module_exists('rules')) {
+    menu_rebuild();
+    rules_clear_cache();
+  }
+}
+
+/**
+ * install basic variables
+ */
+function heartbeat_enable() {
+  drupal_set_message(t('Please visit !messages_page to import default heartbeat messages from other modules.', array('!messages_page' => l(t('Heartbeat messages page'), 'admin/structure/heartbeat'))));
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function heartbeat_schema() {
+
+  $schema['heartbeat_messages'] = array(
+    'description' => t('Table that contains predefined messages that can be used in heartbeat views.'),
+    'fields' => array(
+      'hid' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => t('Primary Key: Unique heartbeat_messages event ID.'),
+      ),
+      'message_id' => array(
+        'type' => 'varchar',
+        'length' => 250,
+        'not null' => FALSE,
+        'default' => '',
+        'description' => t('The message id which is unique to identify activity.'),
+      ),
+      'message' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'size' => 'big',
+        'description' => t('Text of log message to be passed into the t() function.'),
+        'alias' => 'message_orig', // Internal heartbeat field/property
+      ),
+      'message_concat' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'size' => 'big',
+        'description' => t('Text of translatable log message for in concatenated form.'),
+        'alias' => 'message_concat_orig', // Internal heartbeat field/property
+      ),
+      'concat_args' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'size' => 'big',
+        'description' => t('Arguments for concatenation message.'),
+      ),
+      'perms' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'size' => 'tiny',
+        'description' => t('Permissions for this message.'),
+        'default' => 0,
+      ),
+      'custom' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'size' => 'tiny',
+        'description' => t('Custom message type.'),
+        'default' => 0,
+      ),
+      'description' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'size' => 'big',
+        'description' => t('Description and/or help text.'),
+      ),
+      'variables' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'size' => 'big',
+        'description' => t('Variables to parse into the message (used in message).'),
+      ),
+      'attachments' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'size' => 'big',
+        'description' => t('Attachments on messages.'),
+      ),
+    ),
+    'primary key' => array('hid'),
+    'indexes' => array(
+      'message_id' => array('message_id'),
+    ),
+  );
+
+  $schema['heartbeat_activity'] = array(
+    'description' => t('Table that contains logs of all user triggerable actions.'),
+    'fields' => array(
+      'uaid' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => t('Primary Key: Unique heartbeat_activity event ID.'),
+      ),
+      'uid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t('The {users}.uid of the user who triggered the event (requester).'),
+      ),
+      'uid_target' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'default' => 0,
+        'description' => t('The target User ID'),
+      ),
+      'nid' => array(
+        'description' => t('The Node ID.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+      ),
+      'nid_target' => array(
+        'description' => t('The target Node ID (E.g. Group id, node reference, ...).'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+      ),
+      'cid' => array(
+        'description' => t('The target comment ID (optional).'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+      ),
+      'access' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'size' => 'tiny',
+        'description' => t('Access for this message to others.'),
+        'default' => 0,
+      ),
+      'message_id' => array(
+        'type' => 'varchar',
+        'length' => 250,
+        'not null' => FALSE,
+        'default' => '',
+        'description' => t('The message id which links to the heartbeat message.'),
+      ),
+      'message' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'size' => 'big',
+        'description' => t('Text of log message to be passed into the t() function.'),
+      ),
+      'message_concat' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'size' => 'big',
+        'description' => t('Concatenated, grouped or merged text of log message to be passed into the t() function.'),
+      ),
+      'timestamp' => array(
+        'description' => t('The activity\'s unix timestamp when action occurred'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'language' => array(
+        'type' => 'varchar',
+        'length' => 12,
+        'not null' => FALSE,
+        'default' => 'en',
+        'description' => t('language for a log".'),
+      ),
+      'variables' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'size' => 'big',
+        'description' => t('Serialized array of variables that match the message string and that is passed into the t() function.'),
+      ),
+    ),
+    'primary key' => array('uaid'),
+    'indexes' => array(
+      'timestamp' => array('timestamp'),
+      'uid' => array('uid'),
+      'message_id' => array('message_id'),
+      'uid_target' => array('uid_target'),
+      'nid' => array('nid'),
+      'nid_target' => array('nid_target'),
+      'cid' => array('cid'),
+      'language' => array('language'),
+    ),
+  );
+  
+  $schema['heartbeat_mt'] = array(
+    'description' => t('Table links tags with messages to filter logging and viewing.'),
+    'fields' => array(
+      'mtid' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => t('Primary Key: Unique  event ID - heartbeat message id.'),
+      ),
+      'htid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t('The heartbeat tag id to link to.'),
+      ),
+      'hid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t('The heartbeat message id to link to.'),
+      ),
+    ),
+    'primary key' => array('mtid'),
+    'indexes' => array(
+      'htid' => array('htid'),
+      'hid' => array('hid'),
+    ),
+  );
+  
+  $schema['heartbeat_tags'] = array(
+    'description' => t('Table with heartbeat tags.'),
+    'fields' => array(
+      'htid' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => t('Primary Key:heartbeat tag id.'),
+      ),
+      'name' => array(
+        'type' => 'varchar',
+        'length' => 150,
+        'not null' => FALSE,
+        'default' => '',
+        'description' => t('Tag name.'),
+      ),
+    ),
+    'primary key' => array('htid'),
+    'indexes' => array(),
+  );
+
+  $schema['heartbeat_translations'] = array(
+    'description' => t('Table that connects translations of the same activity.'),
+    'fields' => array(
+      'uaid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'description' => t('The uaid of the connection.'),
+      ),
+      'tuaid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'description' => t('The corresponding tuaid.'),
+      ),
+    ),
+  );
+
+  return $schema;
+}

@@ -1,0 +1,20 @@
+<?php
+
+/**
+ * Implements hook_node_insert().
+ * @param <type> $node
+ */
+function heartbeat_test_node_insert($node) {
+
+  if ($node->type == 'article') {
+
+    heartbeat_api_log('heartbeat_add_node', 1, 0, $node->nid, 0,
+      array('@node_title' => $node->title, '@username'=> user_load($node->uid)->name, '@type' => t('article')), HEARTBEAT_PUBLIC_TO_ALL);
+  }
+  elseif ($node->type == 'page') {
+    
+    heartbeat_api_log('heartbeat_add_page', 1, 0, $node->nid, 0,
+      array('@page' => $node->title), HEARTBEAT_PUBLIC_TO_ALL);
+  }
+
+}

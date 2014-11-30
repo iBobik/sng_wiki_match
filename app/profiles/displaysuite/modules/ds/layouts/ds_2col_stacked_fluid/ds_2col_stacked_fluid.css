@@ -1,0 +1,24 @@
+/* $Id: ds_2col_stacked_fluid.css,v 1.1.2.1 2011/02/01 13:57:56 jyve Exp $ */
+
+.group-header {
+}
+
+.group-left {
+  float: left;
+  width: 50%;
+}
+
+.group-right {
+  float: right;
+  width: 50%;
+}
+
+.group-one-column .group-left,
+.group-one-column .group-right {
+	width: 100%;
+	float: none;
+} 
+
+.group-footer {
+  clear: both;
+}

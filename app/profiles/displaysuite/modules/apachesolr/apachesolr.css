@@ -1,0 +1,13 @@
+/* $Id: apachesolr.css,v 1.2 2010/12/21 22:42:43 pwolanin Exp $ */
+
+table.admin-apachesolr td.icon {
+  background: no-repeat center;
+  width: 16px;
+}
+table.admin-apachesolr td.operation {
+  width: 16px;
+}
+tr.apachesolr-selected td.icon {
+  background-image: url(task-check.png);
+}
+

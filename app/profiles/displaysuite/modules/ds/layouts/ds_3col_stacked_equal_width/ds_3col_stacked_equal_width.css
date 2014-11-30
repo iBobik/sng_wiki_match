@@ -1,0 +1,24 @@
+/* $Id: ds_3col_stacked_equal_width.css,v 1.1.2.1 2011/01/12 09:27:15 jyve Exp $ */
+
+.group-header {
+  clear: both;
+}
+
+.group-left {
+  width: 33%;
+  float: left;
+}
+
+.group-middle {
+  width: 34%;
+  float: left;
+}
+
+.group-right {
+  width: 33%;
+  float: right;
+}
+
+.group-footer {
+  clear: both;
+}

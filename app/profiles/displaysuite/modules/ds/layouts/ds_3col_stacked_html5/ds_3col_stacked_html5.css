@@ -1,0 +1,29 @@
+/* $Id: ds_3col_stacked_html5.css,v 1.1.2.1 2011/01/12 09:27:15 jyve Exp $ */
+
+/*HTML 5 specific*/
+header, section, aside, footer{
+  display: block;
+}
+
+.group-header {
+  clear: both;
+}
+
+.group-left {
+  width: 25%;
+  float: left;
+}
+
+.group-middle {
+  width: 50%;
+  float: left;
+}
+
+.group-right {
+  width: 25%;
+  float: right;
+}
+
+.group-footer {
+  clear: both;
+}

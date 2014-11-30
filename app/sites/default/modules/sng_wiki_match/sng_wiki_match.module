@@ -1,0 +1,42 @@
+<?php
+/**
+ * @file
+ * Code for the SNG Wiki match feature.
+ */
+
+include_once 'sng_wiki_match.features.inc';
+
+// TODO: Rename prefixes of following functions
+
+function custom_add_author_form($form, &$form_state, $tid, $name) {
+  $form['tid'] = array('#type' => 'hidden', '#value' => $tid);
+  $form['name'] = array('#type' => 'hidden', '#value' => $name);
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('To je on!'),
+  );
+  return $form;
+}
+
+function custom_add_author_form_submit($form, &$form_state) {
+  $term = taxonomy_term_load($form_state['values']['tid']);
+  $term->field_wiki_article = array(
+    'und' => array(0 => array('value' => $form_state['values']['name'])),
+  );
+  taxonomy_term_save($term);
+}
+
+function custom_next_author_form($form, &$form_state) {
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Nieviem, dalšie!'),
+  );
+  return $form;
+}
+
+function custom_next_author_form_submit($form, &$form_state) {
+  $query = db_query('SELECT tid FROM {taxonomy_term_data} ORDER BY RAND() LIMIT 1');
+  $result = db_fetch_object($query);
+  $form_state['rebuild'] = TRUE;
+  $form_state['redirect'] = 'taxonomy/term/' . $result->tid;
+}

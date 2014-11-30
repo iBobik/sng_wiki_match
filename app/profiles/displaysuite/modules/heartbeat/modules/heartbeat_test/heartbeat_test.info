@@ -1,0 +1,15 @@
+; $Id: heartbeat_test.info,v 1.1.2.1 2010/08/14 13:17:57 stalski Exp $
+name = Heartbeat activity test
+description = Logs basic or drupal core activity. This can be used as documentation, example and is used in heartbeat for testing.
+package = Heartbeat
+version = VERSION
+core = 7.x
+
+files[] = heartbeat_test.module
+files[] = testactivity.inc
+; Information added by drupal.org packaging script on 2010-08-14
+version = "7.x-1.0-alpha7"
+core = "7.x"
+project = "heartbeat"
+datestamp = "1281801992"
+
